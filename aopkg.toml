@@ -1,5 +1,6 @@
 name = "TRANSLATE_MODULE"
 description = "Translate text between languages"
+github = "Nadybot/TRANSLATE_MODULE"
 version = "1.0.2"
 author = "Nadyita"
 bot_type = "Nadybot"

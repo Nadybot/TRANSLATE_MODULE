@@ -36,3 +36,9 @@ jobs:
           asset_path: ./translate-bundle-${{ github.event.release.tag_name }}.zip
           asset_name: translate-bundle-${{ github.event.release.tag_name }}.zip
           asset_content_type: application/zip
+      - name: Notify aopkg
+        uses: distributhor/workflow-webhook@v1
+        env:
+          webhook_type: 'json-extended'
+          webhook_url: 'https://pkg.aobots.org/webhook'
+          webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
