@@ -4,31 +4,29 @@ namespace Nadybot\User\Modules\TRANSLATE_MODULE;
 
 /**
  * @author Nadyita (RK5) <nadyita@hodorraid.org>
- * @Instance
- *
- * Commands this controller contains:
- *	@DefineCommand(
- *		command     = 'translate',
- *		accessLevel = 'all',
- *		description = 'Translate a word or sentence from one language into the other',
- *		alias       = 'trans',
- *		help        = 'translate.txt'
- *	)
  */
 
 require_once __DIR__.'/vendor/autoload.php';
 
-use Nadybot\Core\CommandReply;
+use Nadybot\Core\Attributes as NCA;
+use Nadybot\Core\CmdContext;
+use Nadybot\Core\ModuleInstance;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 
-class TranslateController {
-
-	public string $moduleName;
-
+#[
+	NCA\Instance,
+	NCA\DefineCommand(
+		command:     'translate',
+		accessLevel: 'guest',
+		description: 'Translate a word or sentence from one language into the other',
+		alias:       'trans',
+	)
+]
+class TranslateController extends ModuleInstance {
 	/**
 	 * Safe wrapper around the translate API catching errors
 	 *
-	 * @param \Stichoza\GoogleTranslate\GoogleTranslate $tr The translation object
+	 * @param GoogleTranslate $tr The translation object
 	 * @param string $message The message to translate
 	 * @return string The translated message
 	 */
@@ -44,35 +42,44 @@ class TranslateController {
 	}
 
 	/**
-	 * Command to translate between arbitrary languages
-	 *
-	 * @HandlesCommand("translate")
-	 * @Matches("/^translate\s+([a-z]{2})(?:\.\.|-)([a-z]{2})\s+(.+)$/i")
+	 * Translate between two arbitrary languages
 	 */
-	public function translate2Command(string $message, string $channel, string $sender, CommandReply $sendto, array $args): void {
-		$tr = new GoogleTranslate($args[2], $args[1], ['timeout' => 10]);
-		$sendto->reply($this->safeTranslate($tr, $args[3]));
+	#[NCA\HandlesCommand('translate')]
+	#[NCA\Help\Example('<symbol>translate de..en Das ist keine gute Idee')]
+	public function translate2Command(
+		CmdContext $context,
+		#[NCA\Regexp("[a-z]{2}")] string $fromLanguage,
+		#[NCA\SpaceOptional] #[NCA\Regexp("\.\.|-", example: "..")] string $delimiter,
+		#[NCA\SpaceOptional] #[NCA\Regexp("[a-z]{2}")] string $toLanguage,
+		string $text
+	): void {
+		$tr = new GoogleTranslate($toLanguage, $fromLanguage, ['timeout' => 10]);
+		$context->reply($this->safeTranslate($tr, $text));
 	}
 	
 	/**
-	 * Command to translate from given language into English
-	 *
-	 * @HandlesCommand("translate")
-	 * @Matches("/^translate\s+([a-z]{2})\s+(.+)$/i")
+	 * Translate from the given language into English
 	 */
-	public function translate1Command(string $message, string $channel, string $sender, CommandReply $sendto, array $args): void {
-		$tr = new GoogleTranslate('en', $args[1], ['timeout' => 10]);
-		$sendto->reply($this->safeTranslate($tr, $args[2]));
+	#[NCA\HandlesCommand('translate')]
+	#[NCA\Help\Example('<symbol>translate de Das ist keine gute Idee')]
+	public function translate1Command(
+		CmdContext $context,
+		#[NCA\Regexp("[a-z]{2}")] string $fromLanguage,
+		string $text
+	): void {
+		$tr = new GoogleTranslate('en', $fromLanguage, ['timeout' => 10]);
+		$context->reply($this->safeTranslate($tr, $text));
 	}
 
 	/**
-	 * Command to translate from any language into English
-	 *
-	 * @HandlesCommand("translate")
-	 * @Matches("/^translate\s+(.+)$/i")
+	 * Autodetect a text's language and translate it into English
 	 */
-	public function translate0Command(string $message, string $channel, string $sender, CommandReply $sendto, array $args): void {
+	#[NCA\HandlesCommand('translate')]
+	public function translate0Command(
+		CmdContext $context,
+		string $text
+	): void {
 		$tr = new GoogleTranslate('en', null, ['timeout' => 10]);
-		$sendto->reply($this->safeTranslate($tr, $args[1]));
+		$context->reply($this->safeTranslate($tr, $text));
 	}
 }
